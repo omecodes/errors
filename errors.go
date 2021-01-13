@@ -68,6 +68,11 @@ func (e Error) HTTPStatus() int {
 	}
 }
 
+func HTTPStatus(err error) int {
+	e, _ := Parse(err.Error())
+	return e.HTTPStatus()
+}
+
 func AppendDetails(err error, info ...Info) Error {
 	if e, ok := err.(Error); ok {
 		e.AppendDetails(info...)
