@@ -3,65 +3,62 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 const (
-	Internal            = 0
-	BadRequest          = 1
-	Unauthorized        = 2
-	Forbidden           = 3
-	NotFound            = 4
-	Conflict            = 5
-	NotImplemented      = 6
-	ServiceUnavailable  = 7
-	VersionNotSupported = 8
-	DuplicateResource   = 9
+	CodeInternal = iota
+	CodeBadRequest
+	CodeUnauthorized
+	CodeForbidden
+	CodeNotFound
+	CodeConflict
+	CodeUnImplemented
+	CodeServiceUnavailable
+	CodeVersionNotSupported
+	CodeUnReferencedID
+	CodeNotSupported
 )
 
-type Info struct {
-	Name    string
-	Details string
+type Details struct {
+	Key   string      `json:"key,omitempty"`
+	Value interface{} `json:"value,omitempty"`
 }
 
 type Error struct {
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Details []Info `json:"details,omitempty"`
+	Code    int       `json:"code,omitempty"`
+	Message string    `json:"message,omitempty"`
+	Details []Details `json:"details,omitempty"`
 }
 
-func (e Error) Error() string {
-	var entries []string
-	if e.Details != nil && len(e.Details) > 0 {
-		for name, details := range e.Details {
-			entries = append(entries, fmt.Sprintf("\"%s\": \"%s\"", name, details))
-		}
-		return fmt.Sprintf("{\"code\":%d, \"message\":\"%s\", \"details\": {%s}}", e.Code, e.Message, strings.Join(entries, ","))
+func (e *Error) Error() string {
+	encoded, err := json.Marshal(e)
+	if err != nil {
+		return fmt.Sprintf("{\"code\":%d, \"message\":\"%s\"}", e.Code, e.Message)
 	}
-	return fmt.Sprintf("{\"code\":%d, \"message\":\"%s\"}", e.Code, e.Message)
+	return string(encoded)
 }
 
-func (e Error) AppendDetails(info ...Info) {
-	e.Details = append(e.Details, info...)
+func (e *Error) AddDetails(key string, value interface{}) {
+	e.Details = append(e.Details, Details{Key: key, Value: value})
 }
 
-func (e Error) HTTPStatus() int {
+func (e *Error) HTTPStatus() int {
 	switch e.Code {
-	case BadRequest:
+	case CodeBadRequest:
 		return 400
-	case Unauthorized:
+	case CodeUnauthorized:
 		return 401
-	case Forbidden:
+	case CodeForbidden:
 		return 403
-	case NotFound:
+	case CodeNotFound:
 		return 404
-	case Conflict:
+	case CodeConflict:
 		return 409
-	case NotImplemented:
+	case CodeUnImplemented:
 		return 501
-	case ServiceUnavailable:
+	case CodeServiceUnavailable:
 		return 503
-	case VersionNotSupported:
+	case CodeVersionNotSupported:
 		return 505
 	default:
 		return 500
@@ -73,31 +70,6 @@ func HTTPStatus(err error) int {
 	return e.HTTPStatus()
 }
 
-func AppendDetails(err error, info ...Info) Error {
-	if e, ok := err.(Error); ok {
-		e.AppendDetails(info...)
-		return e
-	}
-
-	msg := err.Error()
-	e, _ := Parse(msg)
-	e.AppendDetails(info...)
-	return e
-}
-
-func Create(code int, message string, info ...Info) *Error {
-	e := &Error{
-		Code:    code,
-		Message: message,
-	}
-	e.Details = append(e.Details, info...)
-	return e
-}
-
-func New(msg string) Error {
-	return Error{Message: msg}
-}
-
 func Parse(str string) (Error, bool) {
 	var e Error
 	err := json.Unmarshal([]byte(str), &e)
@@ -105,57 +77,104 @@ func Parse(str string) (Error, bool) {
 }
 
 func IsNotFound(e error) bool {
-	if err, ok := e.(Error); ok {
-		return err.Code == NotFound
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeNotFound
 	}
 
 	var err Error
 	_ = json.Unmarshal([]byte(e.Error()), &err)
-
-	return err.Code == NotFound
+	return err.Code == CodeNotFound
 }
 
 func IsServiceUnavailable(e error) bool {
-	if err, ok := e.(Error); ok {
-		return err.Code == ServiceUnavailable
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeServiceUnavailable
 	}
 
 	var err Error
 	_ = json.Unmarshal([]byte(e.Error()), &err)
 
-	return err.Code == ServiceUnavailable
+	return err.Code == CodeServiceUnavailable
 }
 
-func IsDuplicate(e error) bool {
-	if err, ok := e.(Error); ok {
-		return err.Code == DuplicateResource
+func IsConflict(e error) bool {
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeConflict
 	}
 
 	var err Error
 	_ = json.Unmarshal([]byte(e.Error()), &err)
 
-	return err.Code == DuplicateResource
+	return err.Code == CodeConflict
+}
+
+func IsNotReferencedID(e error) bool {
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeUnReferencedID
+	}
+
+	var err Error
+	_ = json.Unmarshal([]byte(e.Error()), &err)
+
+	return err.Code == CodeUnReferencedID
 }
 
 func IsUnauthorized(e error) bool {
-	if err, ok := e.(Error); ok {
-		return err.Code == Unauthorized
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeUnauthorized
 	}
 
 	var err Error
 	_ = json.Unmarshal([]byte(e.Error()), &err)
 
-	return err.Code == Unauthorized
+	return err.Code == CodeUnauthorized
 }
 
 func IsForbidden(e error) bool {
 
-	if err, ok := e.(Error); ok {
-		return err.Code == Forbidden
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeForbidden
 	}
 
 	var err Error
 	_ = json.Unmarshal([]byte(e.Error()), &err)
 
-	return err.Code == Forbidden
+	return err.Code == CodeForbidden
+}
+
+func Internal(message string, details ...Details) Error {
+	return Error{Code: CodeInternal, Message: message, Details: details}
+}
+func BadRequest(message string, details ...Details) Error {
+	return Error{Code: CodeBadRequest, Message: message, Details: details}
+}
+func Unauthorized(message string, details ...Details) Error {
+	return Error{Code: CodeUnauthorized, Message: message, Details: details}
+}
+func Forbidden(message string, details ...Details) Error {
+	return Error{Code: CodeForbidden, Message: message, Details: details}
+}
+func NotFound(message string, details ...Details) Error {
+	return Error{Code: CodeNotFound, Message: message, Details: details}
+}
+func Conflict(message string, details ...Details) Error {
+	return Error{Code: CodeConflict, Message: message, Details: details}
+}
+func UnImplemented(message string, details ...Details) Error {
+	return Error{Code: CodeUnImplemented, Message: message, Details: details}
+}
+func ServiceUnavailable(message string, details ...Details) Error {
+	return Error{Code: CodeServiceUnavailable, Message: message, Details: details}
+}
+func VersionNotSupported(message string, details ...Details) Error {
+	return Error{Code: CodeVersionNotSupported, Message: message, Details: details}
+}
+func UnReferencedID(message string, details ...Details) Error {
+	return Error{Code: CodeUnReferencedID, Message: message, Details: details}
+}
+func IndexNotFound(message string, details ...Details) Error {
+	return Error{Code: CodeInternal, Message: message, Details: details}
+}
+func Unsupported(message string, details ...Details) Error {
+	return Error{Code: CodeNotSupported, Message: message, Details: details}
 }
