@@ -142,39 +142,39 @@ func IsForbidden(e error) bool {
 	return err.Code == CodeForbidden
 }
 
-func Internal(message string, details ...Details) Error {
-	return Error{Code: CodeInternal, Message: message, Details: details}
+func Internal(message string, details ...Details) *Error {
+	return &Error{Code: CodeInternal, Message: message, Details: details}
 }
-func BadRequest(message string, details ...Details) Error {
-	return Error{Code: CodeBadRequest, Message: message, Details: details}
+func BadRequest(message string, details ...Details) *Error {
+	return &Error{Code: CodeBadRequest, Message: message, Details: details}
 }
-func Unauthorized(message string, details ...Details) Error {
-	return Error{Code: CodeUnauthorized, Message: message, Details: details}
+func Unauthorized(message string, details ...Details) *Error {
+	return &Error{Code: CodeUnauthorized, Message: message, Details: details}
 }
-func Forbidden(message string, details ...Details) Error {
-	return Error{Code: CodeForbidden, Message: message, Details: details}
+func Forbidden(message string, details ...Details) *Error {
+	return &Error{Code: CodeForbidden, Message: message, Details: details}
 }
-func NotFound(message string, details ...Details) Error {
-	return Error{Code: CodeNotFound, Message: message, Details: details}
+func NotFound(message string, details ...Details) *Error {
+	return &Error{Code: CodeNotFound, Message: message, Details: details}
 }
-func Conflict(message string, details ...Details) Error {
-	return Error{Code: CodeConflict, Message: message, Details: details}
+func Conflict(message string, details ...Details) *Error {
+	return &Error{Code: CodeConflict, Message: message, Details: details}
 }
-func UnImplemented(message string, details ...Details) Error {
-	return Error{Code: CodeUnImplemented, Message: message, Details: details}
+func UnImplemented(message string, details ...Details) *Error {
+	return &Error{Code: CodeUnImplemented, Message: message, Details: details}
 }
-func ServiceUnavailable(message string, details ...Details) Error {
-	return Error{Code: CodeServiceUnavailable, Message: message, Details: details}
+func ServiceUnavailable(message string, details ...Details) *Error {
+	return &Error{Code: CodeServiceUnavailable, Message: message, Details: details}
 }
-func VersionNotSupported(message string, details ...Details) Error {
-	return Error{Code: CodeVersionNotSupported, Message: message, Details: details}
+func VersionNotSupported(message string, details ...Details) *Error {
+	return &Error{Code: CodeVersionNotSupported, Message: message, Details: details}
 }
-func UnReferencedID(message string, details ...Details) Error {
-	return Error{Code: CodeUnReferencedID, Message: message, Details: details}
+func UnReferencedID(message string, details ...Details) *Error {
+	return &Error{Code: CodeUnReferencedID, Message: message, Details: details}
 }
-func IndexNotFound(message string, details ...Details) Error {
-	return Error{Code: CodeInternal, Message: message, Details: details}
+func IndexNotFound(message string, details ...Details) *Error {
+	return &Error{Code: CodeInternal, Message: message, Details: details}
 }
-func Unsupported(message string, details ...Details) Error {
-	return Error{Code: CodeNotSupported, Message: message, Details: details}
+func Unsupported(message string, details ...Details) *Error {
+	return &Error{Code: CodeNotSupported, Message: message, Details: details}
 }
