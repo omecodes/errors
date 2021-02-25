@@ -3,6 +3,8 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-sql-driver/mysql"
+	"github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -98,6 +100,10 @@ func IsServiceUnavailable(e error) bool {
 }
 
 func IsConflict(e error) bool {
+	if isPrimaryKeyConstraintError(e) {
+		return true
+	}
+
 	if err, ok := e.(*Error); ok {
 		return err.Code == CodeConflict
 	}
@@ -109,6 +115,10 @@ func IsConflict(e error) bool {
 }
 
 func IsNotReferencedID(e error) bool {
+	if isForeignKeyConstraintError(e) {
+		return true
+	}
+
 	if err, ok := e.(*Error); ok {
 		return err.Code == CodeUnReferencedID
 	}
@@ -172,9 +182,26 @@ func VersionNotSupported(message string, details ...Details) *Error {
 func UnReferencedID(message string, details ...Details) *Error {
 	return &Error{Code: CodeUnReferencedID, Message: message, Details: details}
 }
-func IndexNotFound(message string, details ...Details) *Error {
-	return &Error{Code: CodeInternal, Message: message, Details: details}
-}
 func Unsupported(message string, details ...Details) *Error {
 	return &Error{Code: CodeNotSupported, Message: message, Details: details}
+}
+
+func isPrimaryKeyConstraintError(err error) bool {
+	if me, ok := err.(*mysql.MySQLError); ok {
+		return me.Number == 1062
+
+	} else if se, ok := err.(sqlite3.Error); ok {
+		return se.ExtendedCode == 2067 || se.ExtendedCode == 1555
+	}
+	return false
+}
+
+func isForeignKeyConstraintError(err error) bool {
+	if me, ok := err.(*mysql.MySQLError); ok {
+		return me.Number == 1216
+
+	} else if se, ok := err.(sqlite3.Error); ok {
+		return se.ExtendedCode == sqlite3.ErrConstraintForeignKey
+	}
+	return false
 }
