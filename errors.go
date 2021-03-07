@@ -205,3 +205,10 @@ func isForeignKeyConstraintError(err error) bool {
 	}
 	return false
 }
+
+func isForeignKeyDuplicate(err error) bool {
+	if me, ok := err.(*mysql.MySQLError); ok {
+		return me.Number == 1826
+	}
+	return false
+}
