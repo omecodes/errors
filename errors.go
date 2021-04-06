@@ -152,6 +152,9 @@ func IsForbidden(e error) bool {
 	return err.Code == CodeForbidden
 }
 
+func New(message string, details ...Details) *Error {
+	return &Error{Code: CodeInternal, Message: message, Details: details}
+}
 func Internal(message string, details ...Details) *Error {
 	return &Error{Code: CodeInternal, Message: message, Details: details}
 }
