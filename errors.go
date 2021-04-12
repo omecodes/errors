@@ -3,6 +3,7 @@ package errors
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/mattn/go-sqlite3"
 )
@@ -18,7 +19,7 @@ const (
 	CodeServiceUnavailable
 	CodeVersionNotSupported
 	CodeUnReferencedID
-	CodeNotSupported
+	CodeUnSupported
 )
 
 type Details struct {
@@ -68,12 +69,21 @@ func (e *Error) HTTPStatus() int {
 }
 
 func HTTPStatus(err error) int {
-	e, _ := Parse(err.Error())
-	return e.HTTPStatus()
+	e, ok := err.(*Error)
+	if ok {
+		return e.HTTPStatus()
+	}
+
+	e, ok = Parse(err.Error())
+	if ok {
+		return e.HTTPStatus()
+	}
+
+	return 500
 }
 
-func Parse(str string) (Error, bool) {
-	var e Error
+func Parse(str string) (*Error, bool) {
+	var e *Error
 	err := json.Unmarshal([]byte(str), &e)
 	return e, err == nil && e.Code > 0 && e.Message != ""
 }
@@ -152,41 +162,63 @@ func IsForbidden(e error) bool {
 	return err.Code == CodeForbidden
 }
 
+func IsUnSupported(e error) bool {
+	if err, ok := e.(*Error); ok {
+		return err.Code == CodeUnSupported
+	}
+
+	var err Error
+	_ = json.Unmarshal([]byte(e.Error()), &err)
+
+	return err.Code == CodeUnSupported
+}
+
 func New(message string, details ...Details) *Error {
 	return &Error{Code: CodeInternal, Message: message, Details: details}
 }
+
 func Internal(message string, details ...Details) *Error {
 	return &Error{Code: CodeInternal, Message: message, Details: details}
 }
+
 func BadRequest(message string, details ...Details) *Error {
 	return &Error{Code: CodeBadRequest, Message: message, Details: details}
 }
+
 func Unauthorized(message string, details ...Details) *Error {
 	return &Error{Code: CodeUnauthorized, Message: message, Details: details}
 }
+
 func Forbidden(message string, details ...Details) *Error {
 	return &Error{Code: CodeForbidden, Message: message, Details: details}
 }
+
 func NotFound(message string, details ...Details) *Error {
 	return &Error{Code: CodeNotFound, Message: message, Details: details}
 }
+
 func Conflict(message string, details ...Details) *Error {
 	return &Error{Code: CodeConflict, Message: message, Details: details}
 }
+
 func UnImplemented(message string, details ...Details) *Error {
 	return &Error{Code: CodeUnImplemented, Message: message, Details: details}
 }
+
 func ServiceUnavailable(message string, details ...Details) *Error {
 	return &Error{Code: CodeServiceUnavailable, Message: message, Details: details}
 }
+
 func VersionNotSupported(message string, details ...Details) *Error {
 	return &Error{Code: CodeVersionNotSupported, Message: message, Details: details}
 }
+
 func UnReferencedID(message string, details ...Details) *Error {
 	return &Error{Code: CodeUnReferencedID, Message: message, Details: details}
 }
+
 func Unsupported(message string, details ...Details) *Error {
-	return &Error{Code: CodeNotSupported, Message: message, Details: details}
+	return &Error{Code: CodeUnSupported, Message: message, Details: details}
 }
 
 func isPrimaryKeyConstraintError(err error) bool {
