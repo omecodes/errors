@@ -2,60 +2,44 @@ package errors
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 )
 
-var (
-	ErrBadInput           = errors.New("bad input")
-	ErrForbidden          = errors.New("forbidden")
-	ErrUnauthorized       = errors.New("forbidden")
-	ErrInternal           = errors.New("internal")
-	ErrNotSupported       = errors.New("unsupported")
-	ErrServiceUnavailable = errors.New("service unavailable")
-	ErrUnImplemented      = errors.New("unimplemented")
-	ErrNotFound           = errors.New("not found")
-	ErrConflict           = errors.New("conflict")
+const (
+	badInput           = "bad input"
+	forbidden          = "forbidden"
+	unauthorized       = "unauthorized"
+	internal           = "internal"
+	notSupported       = "unsupported"
+	serviceUnavailable = "service unavailable"
+	unImplemented      = "unimplemented"
+	notFound           = "not found"
+	conflict           = "conflict"
+	timeout            = "timeout"
 )
 
-func New(message string) error {
-	return Detailed(ErrInternal, With("message", message))
+// D is a map that contains details
+type D map[string]interface{}
+
+func New(details ...D) error {
+	d := &e{
+		kind: internal,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
 }
 
-type jsonObject map[string]interface{}
-
-type detailed struct {
-	err     error
+type e struct {
+	kind    string
 	details map[string]interface{}
 }
 
-func (d *detailed) Error() string {
-	return d.err.Error()
-}
-
-func (d *detailed) Is(err error) bool {
-	return errors.Is(d.err, err)
-}
-
-type Info func(err *detailed)
-
-func With(key string, value interface{}) Info {
-	return func(err *detailed) {
-		if err.details == nil {
-			err.details = make(map[string]interface{})
-		}
-		err.details[key] = value
-	}
-}
-
-func Detailed(err error, info ...Info) error {
-	d := &detailed{
-		err: err,
-	}
-	for _, i := range info {
-		i(d)
-	}
-	return d
+func (d *e) Error() string {
+	return d.kind
 }
 
 func Write(w io.Writer, err error) (int, error) {
@@ -64,14 +48,14 @@ func Write(w io.Writer, err error) (int, error) {
 		mErr error
 	)
 
-	d, ok := err.(*detailed)
+	d, ok := err.(*e)
 	if ok {
-		data, mErr = json.Marshal(jsonObject{
-			"code":    GetHttpStatusCode(d.err),
+		data, mErr = json.Marshal(D{
+			"code":    GetHttpStatusCode(d),
 			"details": d.details,
 		})
 	} else {
-		data, mErr = json.Marshal(jsonObject{
+		data, mErr = json.Marshal(D{
 			"error": err.Error(),
 		})
 	}
@@ -83,29 +67,196 @@ func Write(w io.Writer, err error) (int, error) {
 }
 
 func GetHttpStatusCode(err error) int {
-	d, ok := err.(*detailed)
+	d, ok := err.(*e)
 	if ok {
-		return GetHttpStatusCode(d.err)
+		switch d.kind {
+		case badInput:
+			return 400
+		case unauthorized:
+			return 401
+		case forbidden:
+			return 403
+		case notFound:
+			return 404
+		case conflict:
+			return 409
+		case unImplemented:
+			return 501
+		case serviceUnavailable:
+			return 503
+		case notSupported:
+			return 505
+		default:
+			return 500
+		}
 	}
+	return 500
 
-	switch err {
-	case ErrBadInput:
-		return 400
-	case ErrUnauthorized:
-		return 401
-	case ErrForbidden:
-		return 403
-	case ErrNotFound:
-		return 404
-	case ErrConflict:
-		return 409
-	case ErrUnImplemented:
-		return 501
-	case ErrServiceUnavailable:
-		return 503
-	case ErrNotSupported:
-		return 505
+}
+
+func FromHttpStatus(status int, details D) error {
+	switch status {
+	case 400:
+		return BadInput(details)
+	case 401:
+		return Unauthorized(details)
+	case 403:
+		return Forbidden(details)
+	case 404:
+		return NotFound(details)
+	case 409:
+		return Conflict(details)
+	case 501:
+		return Unimplemented(details)
+	case 503:
+		return ServiceUnavailable(details)
+	case 505:
+		return NotSupported(details)
 	default:
-		return 500
+		return New(details)
 	}
+}
+
+func Timeout(details ...D) error {
+	d := &e{
+		kind: timeout,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func BadInput(details ...D) error {
+	d := &e{
+		kind: badInput,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func Forbidden(details ...D) error {
+	d := &e{
+		kind: forbidden,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func Unauthorized(details ...D) error {
+	d := &e{
+		kind: unauthorized,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func NotSupported(details ...D) error {
+	d := &e{
+		kind: notSupported,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func ServiceUnavailable(details ...D) error {
+	d := &e{
+		kind: serviceUnavailable,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func Unimplemented(details ...D) error {
+	d := &e{
+		kind: unImplemented,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func NotFound(details ...D) error {
+	d := &e{
+		kind: notFound,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func Conflict(details ...D) error {
+	d := &e{
+		kind: conflict,
+	}
+	for _, i := range details {
+		for k, v := range i {
+			d.details[k] = v
+		}
+	}
+	return d
+}
+
+func IsTimeout(err error) bool {
+	return timeout == err.Error()
+}
+
+func IsBadInput(err error) bool {
+	return badInput == err.Error()
+}
+
+func IsForbidden(err error) bool {
+	return forbidden == err.Error()
+}
+
+func IsUnauthorized(err error) bool {
+	return unauthorized == err.Error()
+}
+
+func IsNotSupported(err error) bool {
+	return notSupported == err.Error()
+}
+
+func IsServiceUnavailable(err error) bool {
+	return serviceUnavailable == err.Error()
+}
+
+func IsUnimplemented(err error) bool {
+	return unImplemented == err.Error()
+}
+
+func IsNotFound(err error) bool {
+	return notFound == err.Error()
+}
+
+func IsConflict(err error) bool {
+	return conflict == err.Error()
 }
