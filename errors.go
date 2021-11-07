@@ -23,7 +23,8 @@ type D map[string]interface{}
 
 func New(details ...D) error {
 	d := &e{
-		kind: internal,
+		kind:    internal,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -119,7 +120,8 @@ func FromHttpStatus(status int, details D) error {
 
 func Timeout(details ...D) error {
 	d := &e{
-		kind: timeout,
+		kind:    timeout,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -131,7 +133,8 @@ func Timeout(details ...D) error {
 
 func BadInput(details ...D) error {
 	d := &e{
-		kind: badInput,
+		kind:    badInput,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -143,7 +146,8 @@ func BadInput(details ...D) error {
 
 func Forbidden(details ...D) error {
 	d := &e{
-		kind: forbidden,
+		kind:    forbidden,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -155,7 +159,8 @@ func Forbidden(details ...D) error {
 
 func Unauthorized(details ...D) error {
 	d := &e{
-		kind: unauthorized,
+		kind:    unauthorized,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -167,7 +172,8 @@ func Unauthorized(details ...D) error {
 
 func NotSupported(details ...D) error {
 	d := &e{
-		kind: notSupported,
+		kind:    notSupported,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -179,7 +185,8 @@ func NotSupported(details ...D) error {
 
 func ServiceUnavailable(details ...D) error {
 	d := &e{
-		kind: serviceUnavailable,
+		kind:    serviceUnavailable,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -191,7 +198,8 @@ func ServiceUnavailable(details ...D) error {
 
 func Unimplemented(details ...D) error {
 	d := &e{
-		kind: unImplemented,
+		kind:    unImplemented,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -203,7 +211,8 @@ func Unimplemented(details ...D) error {
 
 func NotFound(details ...D) error {
 	d := &e{
-		kind: notFound,
+		kind:    notFound,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
@@ -215,7 +224,8 @@ func NotFound(details ...D) error {
 
 func Conflict(details ...D) error {
 	d := &e{
-		kind: conflict,
+		kind:    conflict,
+		details: map[string]interface{}{},
 	}
 	for _, i := range details {
 		for k, v := range i {
